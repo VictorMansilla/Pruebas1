@@ -13,7 +13,7 @@ from Apps.Usuarios.token import AutenticacionJWTPerzonalizada   #Llama a la clas
 
 
 @api_view(['POST'])
-@permission_classes([AutenticacionJWTPerzonalizada])   #Protege la ruta, es necesario un token jwt
+@permission_classes([AllowAny])   #Protege la ruta, es necesario un token jwt
 def Crear_Usuario(request):
     try:
         datos = request.data

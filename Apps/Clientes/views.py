@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
 from .serializer import ClientesSerializers
 from .models import Clientes
@@ -10,7 +11,7 @@ from Apps.Usuarios.token import AutenticacionJWTPerzonalizada   #Llama a la clas
 
 
 @api_view(['POST'])
-@permission_classes([AutenticacionJWTPerzonalizada])   #Protege la ruta, es necesario un token jwt
+@permission_classes([AllowAny])   #Protege la ruta, es necesario un token jwt
 def Crear_Cliente(request):
     try:
         datos = request.data

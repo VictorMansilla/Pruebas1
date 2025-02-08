@@ -10,7 +10,7 @@ from .models import Productos
 
 
 @api_view(['POST'])
-@permission_classes([AutenticacionJWTPerzonalizada])   #Permite el acceso sin restricciones a la vista, cualquiera puede acceder a ella
+@permission_classes([AllowAny])   #Permite el acceso sin restricciones a la vista, cualquiera puede acceder a ella
 def Crear_Producto(request):
     try:
         datos = request.data
