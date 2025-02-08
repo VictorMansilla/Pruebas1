@@ -2,12 +2,13 @@ from pathlib import Path
 
 import os
 from dotenv import load_dotenv
+import dj_database_url
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', default='your secret key')
 
 DEBUG = os.getenv('DEBUG')
 
@@ -69,14 +70,13 @@ WSGI_APPLICATION = 'backend_proyecto.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-""" DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-} """
-
 DATABASES = {
+    'default': dj_database_url.config(
+        default='postgresql://prueba1_7b9c_user:qHmocc9qA6j6kEP6zsi7cJpWnkmZj8Bb@dpg-cujtg0t6l47c73c6l5p0-a.oregon-postgres.render.com/prueba1_7b9c',
+        conn_max_age=600)
+}
+
+""" DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',#os.getenv('ENGINE'),
         'NAME': 'Jama',#os.getenv('NAME'),
@@ -85,7 +85,7 @@ DATABASES = {
         'HOST': 'localhost',#os.getenv('HOST'),  # por lo general 'localhost' o una dirección IP
         'PORT': '5432'#os.getenv('PORT'),   # por lo general '5432'
     }
-}
+} """
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
