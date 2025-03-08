@@ -72,7 +72,7 @@ WSGI_APPLICATION = 'backend_proyecto.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://prueba1_7b9c_user:qHmocc9qA6j6kEP6zsi7cJpWnkmZj8Bb@dpg-cujtg0t6l47c73c6l5p0-a.oregon-postgres.render.com/prueba1_7b9c',
+        default=os.getenv('DATABASE_URL'),
         conn_max_age=600)
 }
 
@@ -105,7 +105,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -116,7 +115,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
