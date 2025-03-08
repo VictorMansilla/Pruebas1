@@ -141,9 +141,9 @@ def Hacer_Pedido(request):
             "messaging_product": "whatsapp"
         }
 
-        #respuesta_subir_excel = requests.post(link_subir_excel, headers=cabecera_subir_excel, files=excel_whatsapp, data=data_subir_excel)
+        respuesta_subir_excel = requests.post(link_subir_excel, headers=cabecera_subir_excel, files=excel_whatsapp, data=data_subir_excel)
 
-        #id_excel_subido = respuesta_subir_excel.json().get("id")
+        id_excel_subido = respuesta_subir_excel.json().get("id")
 
         link_mensaje_whatsapp = f"https://graph.facebook.com/{version}/{numero_emisor}/messages"
 
@@ -168,7 +168,7 @@ def Hacer_Pedido(request):
                             {
                                 "type": "document",
                                 "document": {
-                                    "id": 'id_excel_subido',
+                                    "id": id_excel_subido,
                                     "filename": f"Pedido Nº.xlsx"
                                 }
                             }
@@ -186,7 +186,7 @@ def Hacer_Pedido(request):
             }
         }
 
-        #respuesta_subir_excel_whatsapp = requests.post(link_mensaje_whatsapp, json=data, headers=cabecera_mensaje_whatsapp)
+        respuesta_subir_excel_whatsapp = requests.post(link_mensaje_whatsapp, json=data, headers=cabecera_mensaje_whatsapp)
 
         return Response({'Hecho' : 'Se recibió el carrito'}, status=status.HTTP_200_OK)
 
