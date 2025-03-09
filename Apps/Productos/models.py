@@ -10,7 +10,7 @@ class RegistroPedidos(models.Model):
     pedido_numero = models.CharField(null=False, unique=True, editable=False)
     pedido_vendedor_id = models.IntegerField(null=False)
     pedido_vendedor_nombre = models.CharField(null=False, max_length=100)
-    pedido_cliente_id = models.IntegerField(null=False)
+    pedido_cliente_id = models.CharField(null=False, max_length=20)
     pedido_cliente_nombre = models.CharField(null=False, max_length=200)
     pedido_hora = models.DateTimeField(auto_now_add=True)
 
