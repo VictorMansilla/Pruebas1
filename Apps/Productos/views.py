@@ -194,7 +194,7 @@ def Hacer_Pedido(request):
 
     except Exception as e:
         error_trace = traceback.format_exc()  # Obtener el detalle del error
-        #print(error_trace)  # Mostrar el error en consola (logs)
+        print(error_trace)  # Mostrar el error en consola (logs)
         return Response({'Error': str(e), 'Detalle': error_trace}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     except:return Response({'Error':"Algo salió mal"}, status=status.HTTP_400_BAD_REQUEST)
