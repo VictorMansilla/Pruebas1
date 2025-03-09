@@ -86,6 +86,8 @@ def Hacer_Pedido(request):
         [],   # Línea vacía para separación
         ["Localidad",cliente_base_datos.cliente_localidad],
         [],
+        ["Ccliente",cliente_base_datos.cliente_codigo],
+        [],
         ["Vendedor",usuario_nombre],
         [],
         ["Npedido",registro_pedidos.id],
