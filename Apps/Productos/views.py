@@ -83,7 +83,7 @@ def Hacer_Pedido(request):
 
         registro_pedidos = RegistroPedidos(pedido_vendedor_id = usuario_id, pedido_vendedor_nombre = usuario_nombre, pedido_cliente_id = clienteId, pedido_cliente_nombre = cliente_base_datos.cliente_nombre)
 
-        #registro_pedidos.save()
+        registro_pedidos.save()
 
         datos_excel = pd.DataFrame([["Nombre",cliente_base_datos.cliente_nombre],
         [],   # Línea vacía para separación
@@ -125,10 +125,17 @@ def Hacer_Pedido(request):
 
         whatsapp_enviado = enviar_whatsapp(excel_en_memoria=excel_en_memoria, usuario_nombre=usuario_nombre, cliente_nombre=cliente_base_datos.cliente_nombre)
 
-        if whatsapp_enviado.status_code != 200 & email_enviado:
+        if whatsapp_enviado.status_code == 200 and email_enviado:
             return Response({'Hecho' : 'Se recibió el carrito'}, status=status.HTTP_200_OK)
 
-        return Response({'Error':"Algo salió mal"}, status=status.HTTP_400_BAD_REQUEST)
+        elif whatsapp_enviado.status_code == 200 and not email_enviado:
+            return Response({'Mensaje': 'Se envió el WhatsApp, pero no el email'}, status=status.HTTP_206_PARTIAL_CONTENT)
+
+        elif email_enviado and whatsapp_enviado.status_code != 200:
+            return Response({'Mensaje': 'Se envió el email, pero no el WhatsApp'}, status=status.HTTP_206_PARTIAL_CONTENT)
+
+        else:
+            return Response({'Mensaje': 'No se envió ni el WhatsApp ni el email'}, status=status.HTTP_400_BAD_REQUEST)
 
     except KeyError as e:return Response({'Error':f'Datos no enviados en {e}'}, status=status.HTTP_400_BAD_REQUEST)
 
