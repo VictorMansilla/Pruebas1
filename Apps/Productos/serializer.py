@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Productos
+from .models import Productos, RegistroPedidos
 
 class ProductosSerializers(serializers.ModelSerializer):
     class Meta:
@@ -9,14 +9,9 @@ class ProductosSerializers(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
-""" class ProductoSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = Producto
-        fields = ['id', 'producto_nombre', 'producto_precio', 'producto_descripcion', 'producto_usuario']
-        read_only_fields = ['id', 'producto_usuario']
-    
 
-class user(serializers.ModelSerializer):
+class RegistroPedidosSerializers(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ['id', 'username', 'email'] """
+        model = RegistroPedidos
+        fields = ['id', 'pedido_numero', 'pedido_vendedor_id', 'pedido_vendedor_nombre', 'pedido_cliente_id', 'pedido_cliente_nombre', 'pedido_hora']
+        read_only_fields = ['id']

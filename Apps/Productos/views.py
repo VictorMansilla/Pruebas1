@@ -4,9 +4,8 @@ from rest_framework.decorators import api_view, permission_classes
 
 from Apps.Usuarios.models import Usuarios
 
-from .serializer import ProductosSerializers
-from .models import Productos
-from .models import RegistroPedidos
+from .serializer import ProductosSerializers, RegistroPedidosSerializers
+from .models import Productos, RegistroPedidos
 
 from .enviar_gmail import enviar_email
 from .enviar_whatsapp import enviar_whatsapp
@@ -145,3 +144,20 @@ def Hacer_Pedido(request):
         return Response({'Error': str(e), 'Detalle': error_trace}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     except:return Response({'Error':"Algo salió mal"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['GET'])
+@permission_classes([AutenticacionJWTPerzonalizada])   #Permite el acceso sin restricciones a la vista, cualquiera puede acceder a ella
+def Obtener_Registro_Pedidos(request):
+    try:
+        admin_id:str = getattr(request, 'usuario_id')
+
+        if Usuarios.objects.get(id = admin_id).usuario_rol == 'admin':
+            datos = RegistroPedidos.objects.all()
+            producto = RegistroPedidosSerializers(datos, many=True)
+            return Response(producto.data, status=status.HTTP_200_OK)
+
+        else:return Response({'Error':'El usuario no es un administrador'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    except ValueError:return Response({'Error':'No se ha podido obtener el registro'}, status=status.HTTP_400_BAD_REQUEST)

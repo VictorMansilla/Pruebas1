@@ -18,9 +18,9 @@ def Crear_Usuario(request):
     try:
         datos = request.data
         usuario_nombre:str = datos['usuario_nombre']
-        admin_nombre:str = getattr(request, 'usuario_nombre')
+        admin_id:str = getattr(request, 'usuario_id')
 
-        if Usuarios.objects.get(usuario_nombre = admin_nombre).usuario_rol == 'admin':
+        if Usuarios.objects.get(id = admin_id).usuario_rol == 'admin':
             
             if Usuarios.objects.filter(usuario_nombre = usuario_nombre).exists() is False:
 
@@ -60,5 +60,21 @@ def Validar_Usuario(request):
             else:return Response({'Error':'Contraseña inválida'}, status=status.HTTP_401_UNAUTHORIZED)
         
         else:return Response({'Error':'El usuario no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+    except KeyError as e:return Response({'Error':f'Datos no enviados en {e}'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['POST'])
+@permission_classes([AutenticacionJWTPerzonalizada])   #Protege la ruta, es necesario un token jwt
+def Validar_Admin(request):
+    try:
+        admin_id:str = getattr(request, 'usuario_id')
+
+        if Usuarios.objects.get(id = admin_id).usuario_rol == 'admin':
+
+            return Response(True, status=status.HTTP_200_OK)
+
+        else:return Response(False, status=status.HTTP_401_UNAUTHORIZED)
 
     except KeyError as e:return Response({'Error':f'Datos no enviados en {e}'}, status=status.HTTP_400_BAD_REQUEST)
