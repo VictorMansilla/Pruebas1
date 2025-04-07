@@ -70,13 +70,13 @@ WSGI_APPLICATION = 'backend_proyecto.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-""" DATABASES = {
+DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
         conn_max_age=600)
-} """
+}
 
-DATABASES = {
+""" DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',#os.getenv('ENGINE'),
         'NAME': 'Jama',#os.getenv('NAME'),
@@ -85,7 +85,7 @@ DATABASES = {
         'HOST': 'localhost',#os.getenv('HOST'),  # por lo general 'localhost' o una dirección IP
         'PORT': '5432'#os.getenv('PORT'),   # por lo general '5432'
     }
-}
+} """
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
