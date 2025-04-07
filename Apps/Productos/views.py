@@ -13,16 +13,13 @@ from .enviar_whatsapp import enviar_whatsapp
 from Apps.Clientes.models import Clientes
 from Apps.Usuarios.token import AutenticacionJWTPerzonalizada   #Llama a la clase con la autenticación personalizada del token jwt
 
-from dotenv import load_dotenv
 from io import BytesIO
 
-import requests
 #pip install requests
 import pandas as pd
 #pip install pandas
 #pip install openpyxl
-from datetime import datetime
-import os
+from pytz import timezone
 import traceback   #Para extraer el error en específico
 
 
@@ -65,12 +62,12 @@ def Obtener_Productos(request):
 
 
 
-load_dotenv()
 @api_view(['POST'])
 @permission_classes([AutenticacionJWTPerzonalizada])   #Permite el acceso sin restricciones a la vista, cualquiera puede acceder a ella
 def Hacer_Pedido(request):
     try:
         datos = request.data
+        tipo:str = datos['tipo']
         lista_productos:list = datos['carrito']
         lista_cables:list = datos['carritoCables']
         clienteId:str = datos['clienteId']
@@ -78,11 +75,26 @@ def Hacer_Pedido(request):
         usuario_nombre:str = getattr(request, 'usuario_nombre')
         usuario_id:str = getattr(request, 'usuario_id')
 
+        print(tipo)
+
         cliente_base_datos = Clientes.objects.get(cliente_codigo = clienteId)  #Obtener datos del cliente de la base de datos
 
-        registro_pedidos = RegistroPedidos(pedido_vendedor_id = usuario_id, pedido_vendedor_nombre = usuario_nombre, pedido_cliente_id = clienteId, pedido_cliente_nombre = cliente_base_datos.cliente_nombre)
+        registro_pedidos = RegistroPedidos(
+            tipo = tipo,
+            pedido_vendedor_id = usuario_id,
+            pedido_vendedor_nombre = usuario_nombre,
+            pedido_cliente_id = clienteId,
+            pedido_cliente_nombre = cliente_base_datos.cliente_nombre,
+            pedido_productos_json = lista_productos if lista_productos else None,
+            pedido_cables_json = lista_cables if lista_cables else None)
 
         registro_pedidos.save()
+
+        # Zona horaria de Argentina
+        argentina_tz = timezone('America/Argentina/Buenos_Aires')
+
+        # Convertir la hora UTC a hora argentina
+        hora_arg = registro_pedidos.pedido_hora.astimezone(argentina_tz)
 
         datos_excel = pd.DataFrame([["Nombre",cliente_base_datos.cliente_nombre],
         [],   # Línea vacía para separación
@@ -94,7 +106,8 @@ def Hacer_Pedido(request):
         [],
         ["Npedido",registro_pedidos.id],
         [],
-        ["Fecha",datetime.now().strftime("%d-%m-%Y %H:%M:%S")],
+        # Formatear la hora
+        ["Fecha",hora_arg.strftime("%d-%m-%Y %H:%M:%S")],
         [],
         ["Comentario",comentario if comentario != '' else 'No hay comentario'],
         []])
@@ -120,18 +133,26 @@ def Hacer_Pedido(request):
 
         excel_en_memoria.seek(0)  # Ir al inicio del archivo
 
-        email_enviado = enviar_email(usuario_nombre=usuario_nombre, cliente_nombre=cliente_base_datos.cliente_nombre, clienteId=clienteId, excel_en_memoria=excel_en_memoria.getvalue())
+        #email_enviado = enviar_email(usuario_nombre=usuario_nombre, cliente_nombre=cliente_base_datos.cliente_nombre, clienteId=clienteId, excel_en_memoria=excel_en_memoria.getvalue())
 
-        whatsapp_enviado = enviar_whatsapp(excel_en_memoria=excel_en_memoria, usuario_nombre=usuario_nombre, cliente_nombre=cliente_base_datos.cliente_nombre)
+        whatsapp_enviado = enviar_whatsapp(
+            excel_en_memoria=excel_en_memoria,
+            usuario_nombre=usuario_nombre,
+            cliente_nombre=cliente_base_datos.cliente_nombre,
+            hora=hora_arg.strftime("%d-%m-%Y %H:%M:%S"),
+            tipo=tipo)
 
-        if whatsapp_enviado.status_code == 200 and email_enviado:
-            return Response({'Hecho' : 'Se recibió el carrito'}, status=status.HTTP_200_OK)
+        print(whatsapp_enviado.json())
+        print(whatsapp_enviado.status_code)
 
-        elif whatsapp_enviado.status_code == 200 and not email_enviado:
+        if whatsapp_enviado.status_code == 200:
+            return Response({'Hecho' : f'Se envió el {tipo}'}, status=status.HTTP_200_OK)
+
+            """ elif whatsapp_enviado.status_code == 200 and not email_enviado:
             return Response({'Mensaje': 'Se envió el WhatsApp, pero no el email'}, status=status.HTTP_206_PARTIAL_CONTENT)
 
-        elif email_enviado and whatsapp_enviado.status_code != 200:
-            return Response({'Mensaje': 'Se envió el email, pero no el WhatsApp'}, status=status.HTTP_206_PARTIAL_CONTENT)
+        elif whatsapp_enviado.status_code != 200:
+            return Response({'Mensaje': 'Se envió el email, pero no el WhatsApp'}, status=status.HTTP_206_PARTIAL_CONTENT) """
 
         else:
             return Response({'Mensaje': 'No se envió ni el WhatsApp ni el email'}, status=status.HTTP_400_BAD_REQUEST)
@@ -161,3 +182,10 @@ def Obtener_Registro_Pedidos(request):
         else:return Response({'Error':'El usuario no es un administrador'}, status=status.HTTP_401_UNAUTHORIZED)
 
     except ValueError:return Response({'Error':'No se ha podido obtener el registro'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['POST'])
+@permission_classes([AutenticacionJWTPerzonalizada])
+def Cargar_Pago(request):
+    pass

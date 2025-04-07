@@ -8,11 +8,18 @@ class Productos(models.Model):
 
 class RegistroPedidos(models.Model):
     pedido_numero = models.CharField(null=False, unique=True, editable=False)
+    TIPO_OPCIONES = (
+        ('pedido', 'Pedido'),
+        ('presupuesto', 'Presupuesto'),
+    )
+    tipo = models.CharField(max_length=20, choices=TIPO_OPCIONES)
     pedido_vendedor_id = models.IntegerField(null=False)
     pedido_vendedor_nombre = models.CharField(null=False, max_length=100)
     pedido_cliente_id = models.CharField(null=False, max_length=20)
     pedido_cliente_nombre = models.CharField(null=False, max_length=200)
     pedido_hora = models.DateTimeField(auto_now_add=True)
+    pedido_productos_json = models.JSONField(null=True, blank=True)
+    pedido_cables_json = models.JSONField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.pedido_numero:

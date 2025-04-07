@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def enviar_whatsapp(excel_en_memoria, usuario_nombre, cliente_nombre):
+def enviar_whatsapp(excel_en_memoria, usuario_nombre, cliente_nombre, hora, tipo):
     token_acceso_permanente = os.getenv('TOKEN_PERMANENTE_WHATSAPP')
     numero_emisor = os.getenv('NUMERO_EMISOR_WHATSAPP')
     version = os.getenv('VERSION')  # Asegurate de usar la última versión de la API
@@ -42,7 +42,7 @@ def enviar_whatsapp(excel_en_memoria, usuario_nombre, cliente_nombre):
         "to": numero_receptor,
         "type": "template",
         "template": {
-            "name": "plantilla_prueba1",  # Nombre exacto de la plantilla
+            "name": "plantilla_pedidos",  # Nombre exacto de la plantilla
             "language": {
                 "code": "es_AR"  # Idioma correcto
             },
@@ -54,7 +54,7 @@ def enviar_whatsapp(excel_en_memoria, usuario_nombre, cliente_nombre):
                             "type": "document",
                             "document": {
                                 "id": id_excel_subido,
-                                "filename": f"Pedido Nº.xlsx"
+                                "filename": f"{str(tipo).capitalize()}-{hora}.xlsx"
                             }
                         }
                     ]
@@ -64,7 +64,7 @@ def enviar_whatsapp(excel_en_memoria, usuario_nombre, cliente_nombre):
                     "parameters": [
                         {"type": "text", "text": usuario_nombre},        # {{1}} = Vendedor
                         {"type": "text", "text": cliente_nombre},     # {{2}} = Cliente
-                        {"type": "text", "text": datetime.now().strftime("%H:%M")}         # {{3}} = Hora
+                        {"type": "text", "text": hora}         # {{3}} = Hora
                     ]
                 }
             ]

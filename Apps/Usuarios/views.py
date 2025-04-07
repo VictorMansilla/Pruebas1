@@ -23,12 +23,18 @@ def Crear_Usuario(request):
         if Usuarios.objects.get(id = admin_id).usuario_rol == 'admin':
             
             if Usuarios.objects.filter(usuario_nombre = usuario_nombre).exists() is False:
-
                 usuario_contrasegna:str = datos['usuario_contrasegna']
+                usuario_rol:str = datos.get('usuario_rol', 'normal')
+
+                if usuario_rol not in dict(Usuarios.Roles.choices):
+                    usuario_rol = 'normal'
 
                 usuario_contrasegna_hasheada = make_password(usuario_contrasegna)
 
-                ingresar_usuario = Usuarios(usuario_nombre = usuario_nombre, usuario_contrasegna = usuario_contrasegna_hasheada)
+                ingresar_usuario = Usuarios(
+                    usuario_nombre = usuario_nombre,
+                    usuario_contrasegna = usuario_contrasegna_hasheada,
+                    usuario_rol = usuario_rol)
                 
                 ingresar_usuario.save()
 

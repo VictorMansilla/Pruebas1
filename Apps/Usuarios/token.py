@@ -3,7 +3,7 @@ import datetime
 import jwt
 
 from rest_framework.permissions import BasePermission
-from rest_framework.exceptions import AuthenticationFailed, APIException
+from rest_framework.exceptions import APIException
 
 #Generar una clave secreta para los tokens
 #import secrets
