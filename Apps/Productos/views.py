@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from django.http import HttpResponse
 
 from Apps.Usuarios.models import Usuarios
 
@@ -21,6 +22,7 @@ import pandas as pd
 #pip install openpyxl
 from pytz import timezone
 import traceback   #Para extraer el error en específico
+import openpyxl
 
 
 @api_view(['POST'])
@@ -74,8 +76,6 @@ def Hacer_Pedido(request):
         comentario:str = datos['comentario']
         usuario_nombre:str = getattr(request, 'usuario_nombre')
         usuario_id:str = getattr(request, 'usuario_id')
-
-        print(tipo)
 
         cliente_base_datos = Clientes.objects.get(cliente_codigo = clienteId)  #Obtener datos del cliente de la base de datos
 
@@ -185,7 +185,40 @@ def Obtener_Registro_Pedidos(request):
 
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 @permission_classes([AutenticacionJWTPerzonalizada])
-def Cargar_Pago(request):
-    pass
+def Descargar_Registro_Pedidos(request):
+    try:
+        if RegistroPedidos.objects.count() < 1:
+            return Response('No hay registros para descargar', status=status.HTTP_204_NO_CONTENT)
+        
+        wb = openpyxl.Workbook()   #crea un nuevo libro de Excel
+        ws = wb.active   #obtiene la hoja por defecto
+        ws.title = 'Página1'   #cambia el nombre de la pestaña
+
+        ws.append(['ID', 'Id del Vendedor', 'Nombre del Vendedor', 'Id del Cliente', 'Nombre del Cliente', 'Hora del pedido'])
+
+        for registro in RegistroPedidos.objects.all():
+            ws.append([
+                registro.pedido_numero,
+                registro.pedido_vendedor_id,
+                registro.pedido_vendedor_nombre,
+                registro.pedido_cliente_id,
+                registro.pedido_cliente_nombre,
+                registro.pedido_hora.strftime('%Y-%m-%d %H:%M') if registro.pedido_hora else ''
+            ])
+        
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename=Resgitro Pedidos.xlsx'
+
+        wb.save(response)
+        return response
+    
+    except Exception as e:
+        error_trace = traceback.format_exc()  # Obtener el detalle del error
+        print(error_trace)  # Mostrar el error en consola (logs)
+        return Response({'Error': str(e), 'Detalle': error_trace}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except:return Response({'Error':"Algo salió mal"}, status=status.HTTP_400_BAD_REQUEST)
