@@ -10,17 +10,16 @@ from .models import Productos, RegistroPedidos
 
 from .enviar_gmail import enviar_email
 from .enviar_whatsapp import enviar_whatsapp
+from .plantilla_pedido_excel import plantilla_pedido_excel
 
 from Apps.Clientes.models import Clientes
 from Apps.Usuarios.token import AutenticacionJWTPerzonalizada   #Llama a la clase con la autenticación personalizada del token jwt
 
-from io import BytesIO
 
+from pytz import timezone
 #pip install requests
-import pandas as pd
 #pip install pandas
 #pip install openpyxl
-from pytz import timezone
 import traceback   #Para extraer el error en específico
 import openpyxl
 
@@ -90,50 +89,21 @@ def Hacer_Pedido(request):
 
         registro_pedidos.save()
 
+        excel_en_memoria = plantilla_pedido_excel(
+            cliente_base_datos = cliente_base_datos,
+            registro_pedidos = registro_pedidos,
+            comentario = comentario,
+            lista_productos = lista_productos,
+            lista_cables = lista_cables
+        )
+    
+        #email_enviado = enviar_email(usuario_nombre=usuario_nombre, cliente_nombre=cliente_base_datos.cliente_nombre, clienteId=clienteId, excel_en_memoria=excel_en_memoria.getvalue())
+
         # Zona horaria de Argentina
         argentina_tz = timezone('America/Argentina/Buenos_Aires')
 
         # Convertir la hora UTC a hora argentina
         hora_arg = registro_pedidos.pedido_hora.astimezone(argentina_tz)
-
-        datos_excel = pd.DataFrame([["Nombre",cliente_base_datos.cliente_nombre],
-        [],   # Línea vacía para separación
-        ["Localidad",cliente_base_datos.cliente_localidad],
-        [],
-        ["Ccliente",cliente_base_datos.cliente_codigo],
-        [],
-        ["Vendedor",usuario_nombre],
-        [],
-        ["Npedido",registro_pedidos.id],
-        [],
-        # Formatear la hora
-        ["Fecha",hora_arg.strftime("%d-%m-%Y %H:%M:%S")],
-        [],
-        ["Comentario",comentario if comentario != '' else 'No hay comentario'],
-        []])
-
-        excel_en_memoria = BytesIO()   # Guardar Excel en memoria (en lugar de escribir en disco)
-
-        # Guardar en el mismo archivo de Excel en la misma hoja
-        with pd.ExcelWriter(excel_en_memoria) as escritor:
-            datos_excel.to_excel(escritor, index=False, header=False, startrow=0)
-
-            datos_productos = pd.DataFrame(lista_productos)
-
-            datos_productos = datos_productos.rename(columns={
-                'producto_codigo':'CProducto',
-                'producto_nombre':'NProducto'
-            })
-
-            datos_productos.to_excel(escritor, index=False, startrow=len(datos_excel))
-
-            if lista_cables != []:
-                datos_cables = pd.DataFrame(lista_cables)
-                datos_cables.to_excel(escritor, index=False, startrow=((len(datos_productos)+len(datos_excel)+2) if len(datos_productos) > 0 else len(datos_excel)))
-
-        excel_en_memoria.seek(0)  # Ir al inicio del archivo
-
-        #email_enviado = enviar_email(usuario_nombre=usuario_nombre, cliente_nombre=cliente_base_datos.cliente_nombre, clienteId=clienteId, excel_en_memoria=excel_en_memoria.getvalue())
 
         whatsapp_enviado = enviar_whatsapp(
             excel_en_memoria=excel_en_memoria,
@@ -141,9 +111,6 @@ def Hacer_Pedido(request):
             cliente_nombre=cliente_base_datos.cliente_nombre,
             hora=hora_arg.strftime("%d-%m-%Y %H:%M:%S"),
             tipo=tipo)
-
-        print(whatsapp_enviado.json())
-        print(whatsapp_enviado.status_code)
 
         if whatsapp_enviado.status_code == 200:
             return Response({'Hecho' : f'Se envió el {tipo}'}, status=status.HTTP_200_OK)
@@ -189,6 +156,10 @@ def Obtener_Registro_Pedidos(request):
 @permission_classes([AutenticacionJWTPerzonalizada])
 def Descargar_Registro_Pedidos(request):
     try:
+        admin_id:str = getattr(request, 'usuario_id')
+        if Usuarios.objects.get(id = admin_id).usuario_rol != 'admin':
+            return Response({'Error':'El usuario no es un administrador'}, status=status.HTTP_401_UNAUTHORIZED)
+
         if RegistroPedidos.objects.count() < 1:
             return Response('No hay registros para descargar', status=status.HTTP_204_NO_CONTENT)
         
@@ -216,6 +187,66 @@ def Descargar_Registro_Pedidos(request):
         wb.save(response)
         return response
     
+    except Exception as e:
+        error_trace = traceback.format_exc()  # Obtener el detalle del error
+        print(error_trace)  # Mostrar el error en consola (logs)
+        return Response({'Error': str(e), 'Detalle': error_trace}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except:return Response({'Error':"Algo salió mal"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['GET'])
+@permission_classes([AutenticacionJWTPerzonalizada])
+def Obtener_Pedido(request, pedido_numero:str):
+    try:
+        admin_id:str = getattr(request, 'usuario_id')
+        
+        if Usuarios.objects.get(id = admin_id).usuario_rol != 'admin':
+            return Response({'Error':'El usuario no es un administrador'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        pedido_bd = RegistroPedidos.objects.get(pedido_numero = pedido_numero)
+        pedido = RegistroPedidosSerializers(pedido_bd)
+        return Response(pedido.data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        error_trace = traceback.format_exc()  # Obtener el detalle del error
+        print(error_trace)  # Mostrar el error en consola (logs)
+        return Response({'Error': str(e), 'Detalle': error_trace}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except:return Response({'Error':"Algo salió mal"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['GET'])
+@permission_classes([AutenticacionJWTPerzonalizada])
+def Descargar_Pedido(request, pedido_numero:str):
+    try:
+        admin_id:str = getattr(request, 'usuario_id')
+        
+        if Usuarios.objects.get(id = admin_id).usuario_rol != 'admin':
+            return Response({'Error':'El usuario no es un administrador'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        pedido_bd = RegistroPedidos.objects.get(pedido_numero = pedido_numero)
+
+        cliente_base_datos = Clientes.objects.get(cliente_codigo = pedido_bd.pedido_cliente_id)  #Obtener datos del cliente de la base de datos
+        
+        excel_en_memoria = plantilla_pedido_excel(
+            cliente_base_datos = cliente_base_datos,
+            registro_pedidos = pedido_bd,
+            comentario = [],
+            lista_productos = pedido_bd.pedido_productos_json if pedido_bd.pedido_productos_json else [],
+            lista_cables = pedido_bd.pedido_cables_json if pedido_bd.pedido_cables_json else []
+        )
+
+        response = HttpResponse(
+            excel_en_memoria.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename=Resgitro Pedidos.xlsx'
+
+        return response
+        
     except Exception as e:
         error_trace = traceback.format_exc()  # Obtener el detalle del error
         print(error_trace)  # Mostrar el error en consola (logs)
