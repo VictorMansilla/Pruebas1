@@ -3,7 +3,7 @@ import requests
 
 def mantener_vivo():
     try:
-        url = "https://pruebas1-d2o0.onrender.com/"  # Reemplaza con tu URL real
+        url = "https://jamapedidos.onrender.com"  # Reemplaza con tu URL real
         requests.get(url)  # Hace una solicitud GET para evitar que se duerma
         #print("✔ Backend despertado exitosamente.")
     except Exception as e:
