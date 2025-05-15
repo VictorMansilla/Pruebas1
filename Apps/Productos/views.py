@@ -25,7 +25,7 @@ import openpyxl
 
 
 @api_view(['POST'])
-@permission_classes([AutenticacionJWTPerzonalizada])   #Permite el acceso sin restricciones a la vista, cualquiera puede acceder a ella
+@permission_classes([AutenticacionJWTPerzonalizada])
 def Crear_Producto(request):
     try:
         datos = request.data
@@ -52,7 +52,7 @@ def Crear_Producto(request):
 
 
 @api_view(['GET'])
-@permission_classes([AutenticacionJWTPerzonalizada])   #Permite el acceso sin restricciones a la vista, cualquiera puede acceder a ella
+@permission_classes([AutenticacionJWTPerzonalizada])
 def Obtener_Productos(request):
     try:
         datos = Productos.objects.all()
@@ -64,7 +64,7 @@ def Obtener_Productos(request):
 
 
 @api_view(['POST'])
-@permission_classes([AutenticacionJWTPerzonalizada])   #Permite el acceso sin restricciones a la vista, cualquiera puede acceder a ella
+@permission_classes([AutenticacionJWTPerzonalizada])
 def Hacer_Pedido(request):
     try:
         datos = request.data
@@ -135,8 +135,9 @@ def Hacer_Pedido(request):
 
 
 
+#Acceso para admin
 @api_view(['GET'])
-@permission_classes([AutenticacionJWTPerzonalizada])   #Permite el acceso sin restricciones a la vista, cualquiera puede acceder a ella
+@permission_classes([AutenticacionJWTPerzonalizada])
 def Obtener_Registro_Pedidos(request):
     try:
         admin_id:str = getattr(request, 'usuario_id')
@@ -145,13 +146,14 @@ def Obtener_Registro_Pedidos(request):
             datos = RegistroPedidos.objects.all()
             producto = RegistroPedidosSerializers(datos, many=True)
             return Response(producto.data, status=status.HTTP_200_OK)
-
+        
         else:return Response({'Error':'El usuario no es un administrador'}, status=status.HTTP_401_UNAUTHORIZED)
 
     except ValueError:return Response({'Error':'No se ha podido obtener el registro'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
+#Acceso para admin
 @api_view(['GET'])
 @permission_classes([AutenticacionJWTPerzonalizada])
 def Descargar_Registro_Pedidos(request):
@@ -196,14 +198,17 @@ def Descargar_Registro_Pedidos(request):
 
 
 
+#Acceso para admin y usuario
 @api_view(['GET'])
 @permission_classes([AutenticacionJWTPerzonalizada])
 def Obtener_Pedido(request, pedido_numero:str):
     try:
-        admin_id:str = getattr(request, 'usuario_id')
-        
-        if Usuarios.objects.get(id = admin_id).usuario_rol != 'admin':
-            return Response({'Error':'El usuario no es un administrador'}, status=status.HTTP_401_UNAUTHORIZED)
+        usuario_id:str = getattr(request, 'usuario_id')
+
+        if Usuarios.objects.get(id = usuario_id).usuario_rol != 'admin':
+
+            if usuario_id != RegistroPedidos.objects.get(pedido_numero = pedido_numero).pedido_vendedor_id:
+                return Response({'Error':'El pedido solicitado no es suyo'}, status=status.HTTP_401_UNAUTHORIZED)
         
         pedido_bd = RegistroPedidos.objects.get(pedido_numero = pedido_numero)
         pedido = RegistroPedidosSerializers(pedido_bd)
@@ -218,14 +223,19 @@ def Obtener_Pedido(request, pedido_numero:str):
 
 
 
+#Acceso para admin y usuario
 @api_view(['GET'])
 @permission_classes([AutenticacionJWTPerzonalizada])
 def Descargar_Pedido(request, pedido_numero:str):
     try:
-        admin_id:str = getattr(request, 'usuario_id')
+        usuario_id:str = getattr(request, 'usuario_id')
         
-        if Usuarios.objects.get(id = admin_id).usuario_rol != 'admin':
-            return Response({'Error':'El usuario no es un administrador'}, status=status.HTTP_401_UNAUTHORIZED)
+        if Usuarios.objects.get(id = usuario_id).usuario_rol != 'admin':
+
+            if usuario_id != RegistroPedidos.objects.get(pedido_numero = pedido_numero).pedido_vendedor_id:
+                return Response({'Error':'El pedido solicitado no es suyo'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+            #return Response({'Error':'El usuario no es un administrador'}, status=status.HTTP_401_UNAUTHORIZED)
         
         pedido_bd = RegistroPedidos.objects.get(pedido_numero = pedido_numero)
 
@@ -247,6 +257,64 @@ def Descargar_Pedido(request, pedido_numero:str):
 
         return response
         
+    except Exception as e:
+        error_trace = traceback.format_exc()  # Obtener el detalle del error
+        print(error_trace)  # Mostrar el error en consola (logs)
+        return Response({'Error': str(e), 'Detalle': error_trace}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except:return Response({'Error':"Algo salió mal"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+#Acceso para usuario
+@api_view(['GET'])
+@permission_classes([AutenticacionJWTPerzonalizada])
+def Obtener_Mi_Registro_Pedidos(request):
+    try:
+        usuario_id:str = getattr(request, 'usuario_id')
+
+        datos = RegistroPedidos.objects.filter(pedido_vendedor_id = usuario_id)
+        producto = RegistroPedidosSerializers(datos, many=True)
+        return Response(producto.data, status=status.HTTP_200_OK)
+
+    except ValueError:return Response({'Error':'No se ha podido obtener el registro'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+#Acceso para admin
+@api_view(['GET'])
+@permission_classes([AutenticacionJWTPerzonalizada])
+def Descargar_Mi_Registro_Pedidos(request):
+    try:
+        usuario_id:str = getattr(request, 'usuario_id')
+
+        if RegistroPedidos.objects.filter(pedido_vendedor_id = usuario_id).count() < 1:
+            return Response('No hay registros para descargar', status=status.HTTP_204_NO_CONTENT)
+        
+        wb = openpyxl.Workbook()   #crea un nuevo libro de Excel
+        ws = wb.active   #obtiene la hoja por defecto
+        ws.title = 'Página1'   #cambia el nombre de la pestaña
+
+        ws.append(['ID', 'Id del Vendedor', 'Nombre del Vendedor', 'Id del Cliente', 'Nombre del Cliente', 'Hora del pedido'])
+
+        for registro in RegistroPedidos.objects.filter(pedido_vendedor_id = usuario_id):
+            ws.append([
+                registro.pedido_numero,
+                registro.pedido_vendedor_id,
+                registro.pedido_vendedor_nombre,
+                registro.pedido_cliente_id,
+                registro.pedido_cliente_nombre,
+                registro.pedido_hora.strftime('%Y-%m-%d %H:%M') if registro.pedido_hora else ''
+            ])
+        
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename=Resgitro Pedidos.xlsx'
+
+        wb.save(response)
+        return response
+    
     except Exception as e:
         error_trace = traceback.format_exc()  # Obtener el detalle del error
         print(error_trace)  # Mostrar el error en consola (logs)
