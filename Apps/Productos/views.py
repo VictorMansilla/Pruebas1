@@ -24,6 +24,7 @@ import traceback   #Para extraer el error en específico
 import openpyxl
 
 
+
 @api_view(['POST'])
 @permission_classes([AutenticacionJWTPerzonalizada])
 def Crear_Producto(request):
@@ -48,6 +49,40 @@ def Crear_Producto(request):
         else:return Response({'Error':'El usuario no es un administrador'}, status=status.HTTP_401_UNAUTHORIZED)
         
     except KeyError as e:return Response({'Error':f'Datos no enviados en {e}'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['PUT'])
+@permission_classes({AutenticacionJWTPerzonalizada})
+def Actualizar_Producto(request):
+    datos = request.data
+    usuario_id:str = getattr(request, 'usuario_id')
+    campos_requeridos = ['producto_codigo', 'producto_nombre']
+
+    for campo in campos_requeridos:
+        if campo not in datos:
+            return Response({'Error':f'Datos no enviados en {campo}'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    producto_nombre:str = datos['producto_nombre']
+    producto_codigo:str = datos['producto_codigo']
+
+    try:
+        producto = Productos.objects.get(producto_codigo = producto_codigo)
+    except Productos.DoesNotExist:
+        return Response({'Error': 'Producto no existe'}, status=status.HTTP_404_NOT_FOUND)
+    
+    try:
+        usuario = Usuarios.objects.get(id=usuario_id)
+    except Usuarios.DoesNotExist:
+        return Response({'Error': 'Usuario no existe'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    if usuario.usuario_rol != 'admin':
+        return Response({'Error': 'El usuario no es un administrador'}, status=status.HTTP_403_FORBIDDEN)
+    
+    producto.producto_nombre = producto_nombre
+    producto.save()
+
+    return Response({'Hecho':f'El producto {producto.producto_codigo} fue actualizado'}, status=status.HTTP_200_OK)
 
 
 

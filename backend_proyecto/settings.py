@@ -8,6 +8,8 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+import cloudinary
+
 SECRET_KEY = os.getenv('SECRET_KEY', default='your secret key')
 
 DEBUG = os.getenv('DEBUG')
@@ -24,7 +26,9 @@ INSTALLED_APPS = [
     'Apps.Usuarios',
     'Apps.Clientes',
     'Apps.Productos',
+    'Apps.Pagos',
     'corsheaders', #Agregado para aceptar todos los frontends
+    'cloudinary',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -85,7 +89,7 @@ DATABASES = {
         'HOST': 'localhost',#os.getenv('HOST'),  # por lo general 'localhost' o una dirección IP
         'PORT': '5432'#os.getenv('PORT'),   # por lo general '5432'
     }
-} """
+}  """
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -134,3 +138,14 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_EMISOR')
 EMAIL_HOST_PASSWORD = os.getenv('PASSWORD')
+
+
+
+#Integración de Cloudinary con Django
+
+cloudinary.config( 
+    cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME'), 
+    api_key = os.getenv('CLOUDINARY_APY_KEY'), 
+    api_secret = os.getenv('CLOUDINARY_APY_SECRET'),
+    secure = True
+)
