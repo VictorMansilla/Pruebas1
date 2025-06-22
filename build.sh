@@ -8,6 +8,6 @@ python manage.py makemigrations Clientes
 
 python manage.py makemigrations Productos
 
-python manage.py migrate Usuarios
+python manage.py makemigrations Pagos
 
 python manage.py migrate
