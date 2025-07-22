@@ -42,9 +42,9 @@ def enviar_whatsapp(excel_en_memoria, usuario_nombre, cliente_nombre, hora, tipo
         "to": numero_receptor,
         "type": "template",
         "template": {
-            "name": "plantilla_pedidos",  # Nombre exacto de la plantilla
+            "name": "pedido",  # Nombre exacto de la plantilla
             "language": {
-                "code": "es_AR"  # Idioma correcto
+                "code": "en"  # Idioma correcto
             },
             "components": [
                 {
